@@ -1,7 +1,9 @@
 import random
 import codecs
 import string
+import numpy as np
 from nltk.stem.porter import PorterStemmer
+import matplotlib.pyplot as plt
 
 import gensim
 from gensim import corpora
@@ -38,7 +40,7 @@ def preprocess(document):
         # 1.4
         tokenizedParagraphs = [i.split(" ") for i in paragraphs]
         #Remove
-        processedTokens = [[j.replace("\r\n", "").lower() for j in i if not j == "" and not j == "\n" and not j == "\r"] for i in tokenizedParagraphs]
+        processedTokens = [[j.replace("\r\n", "").lower() for j in i if not j == ""] for i in tokenizedParagraphs]
 
         # 1.5
         # remove punctuation
@@ -60,12 +62,13 @@ processedTokens, paragraphs = preprocess("")
 dictionary = corpora.Dictionary(processedTokens)
 # 2.2 Create corpus
 corpus = [dictionary.doc2bow(doc, allow_update=True) for doc in processedTokens]
+
 # 1.7 Show each tokens frequency
 word_counts = [[(dictionary[id], count) for id, count in doc] for doc in corpus]
 
 # create models
 # 3.1
-tfidf_model = gensim.models.TfidfModel(corpus)
+tfidf_model = gensim.models.TfidfModel(corpus, normalize=True)
 
 # 3.2
 #Creates the tf-idf weights of each token
@@ -77,12 +80,12 @@ indexT = gensim.similarities.MatrixSimilarity(corpus, num_best=10, num_features=
 
 # 3.4
 #Same as 3.2 and 3.3 just for a LSI-model
-lsi_model = gensim.models.LsiModel(tfidf_corpus, id2word=dictionary, num_topics=100)
-indexL = gensim.similarities.MatrixSimilarity(corpus, num_best=100, num_features=len(dictionary))
+lsi_model = gensim.models.LsiModel(tfidf_corpus, id2word=dictionary, num_topics=300)
+indexL = gensim.similarities.MatrixSimilarity(lsi_model[tfidf_corpus])
 
 # 3.5
 #Prints the top three LSI-topics
-[print(topic) for index, topic in lsi_model.show_topics(num_topics=3)]
+[print(f"{topic}") for index, topic in lsi_model.show_topics(num_topics=3)]
 
 # 4.1
 rawQuery = "What is the function of money?"
@@ -113,9 +116,22 @@ for topicNum, score in enumerate(sorted(lsi_query, key=lambda x: -abs(x[1]))[:3]
     print(f"Score: {score[1]}, Topic {lsi_topics[topicNum][1]}\n")
 
 doc2similarity2 = enumerate(indexL[lsi_model[queryBoW]])
-print("\n")
 #Prints the top three paragraph according to the LSI-model
-for doc_number, score in sorted(doc2similarity2, key=lambda x: -abs(x[1][1]))[:3]:
-    paragraph = "\r\n".join(paragraphs[score[0]].split("\r\n")[:5])
-    print(f"#{doc_number + 1} [Paragraph {score[0]}, score: {score[1]}]\n{paragraph}\n")
+for doc_number, score in sorted(doc2similarity2, key=lambda x: -abs(x[1]))[:3]:
+    paragraph = "\r\n".join(paragraphs[doc_number].split("\r\n")[:5])
+    print(f"#{doc_number + 1} [Paragraph {doc_number}, score: {score}]\n{paragraph}\n")
+
+#Graphs the 15 most frequently used words
+test = []
+for index in dictionary.id2token:
+    test.append((dictionary[index], dictionary.cfs[index]))
+test = sorted(test, key=lambda x: -x[1])[:15]
+x, y = [word for word, freq in test], [freq for word, freq in test]
+
+plt.bar(np.arange(len(x)), y, align="center", alpha=0.5)
+plt.xticks(np.arange(len(x)), x)
+plt.xlabel("Processed tokens")
+plt.ylabel("Frequency")
+plt.title("Frequency distribution for top 15 most frequently used tokens")
+plt.show()
 
