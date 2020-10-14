@@ -4,6 +4,7 @@ import string
 import numpy as np
 from nltk.stem.porter import PorterStemmer
 import matplotlib.pyplot as plt
+
 import gensim
 from gensim import corpora
 
@@ -39,7 +40,7 @@ def preprocess(document):
         # 1.4
         tokenizedParagraphs = [i.split(" ") for i in paragraphs]
         #Remove
-        processedTokens = [[j.replace("\r\n", "").lower() for j in i if not j == "" and not j == "\r" and not j =="\n"] for i in tokenizedParagraphs]
+        processedTokens = [[j.replace("\r\n", "").lower() for j in i if not j == ""] for i in tokenizedParagraphs]
 
         # 1.5
         # remove punctuation
@@ -79,7 +80,7 @@ indexT = gensim.similarities.MatrixSimilarity(corpus, num_best=10, num_features=
 
 # 3.4
 #Same as 3.2 and 3.3 just for a LSI-model
-lsi_model = gensim.models.LsiModel(tfidf_corpus, id2word=dictionary, num_topics=100)
+lsi_model = gensim.models.LsiModel(tfidf_corpus, id2word=dictionary, num_topics=300)
 indexL = gensim.similarities.MatrixSimilarity(lsi_model[tfidf_corpus])
 
 # 3.5
@@ -127,11 +128,10 @@ for index in dictionary.id2token:
 test = sorted(test, key=lambda x: -x[1])[:15]
 x, y = [word for word, freq in test], [freq for word, freq in test]
 
-plt.figure(figsize=(15,8))
 plt.bar(np.arange(len(x)), y, align="center", alpha=0.5)
 plt.xticks(np.arange(len(x)), x)
 plt.xlabel("Processed tokens")
 plt.ylabel("Frequency")
 plt.title("Frequency distribution for top 15 most frequently used tokens")
-plt.savefig("frequency_distributions.png")
+plt.show()
 
