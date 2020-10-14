@@ -128,10 +128,11 @@ for index in dictionary.id2token:
 test = sorted(test, key=lambda x: -x[1])[:15]
 x, y = [word for word, freq in test], [freq for word, freq in test]
 
+plt.figure(figsize=(15, 8))
 plt.bar(np.arange(len(x)), y, align="center", alpha=0.5)
 plt.xticks(np.arange(len(x)), x)
 plt.xlabel("Processed tokens")
 plt.ylabel("Frequency")
 plt.title("Frequency distribution for top 15 most frequently used tokens")
-plt.show()
+plt.savefig("frequency_distributions.png")
 
